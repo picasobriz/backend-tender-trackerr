@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/picaspbriz/mod5/backend-tender-trackerr/backend/venv
+set -gx VIRTUAL_ENV /home/anord/backend-tender-trackerr/backend/venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
