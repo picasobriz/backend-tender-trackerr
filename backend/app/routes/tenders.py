@@ -54,3 +54,12 @@ def update_tender(user, tender_id):
         setattr(tender, key, value)
     db.session.commit()
     return jsonify(TenderOut().dump(tender))
+
+@bp.delete("/<int:tender_id>")
+@roles_required("admin")
+def delete_tender(user, tender_id):
+    tender = find(Tender, tender_id)
+    own(user, tender)
+    db.session.delete(tender)
+    db.session.commit()
+    return "", 204
