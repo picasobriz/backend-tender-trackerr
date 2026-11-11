@@ -56,5 +56,17 @@ def upload_file(file, kind):
     except Exception as e:
         current_app.logger.error("Cloudinary failed: %s", e)
         raise ApiError("Upload failed, please try again later", 502)
-    
-        
+
+def send_deadline_reminders(days=2):
+    """Email verified contractors who have not bid on open tenders closing within days. Returns emails sent."""
+    closing = Tender.query.filter(Tender.status == "open", Tender.deadline_date.between(now(), now() + timedelta(days=days))).all()
+    contractors = User.query.filter_by(role="contractor", is_verified=True).all()
+    sent = 0
+    for tender in closing:
+        already_bid = {b.bidder_id for b in tender.bids}
+        for user in contractors:
+            if user.id not in already_bid:
+                send_email(user.email, f"Deadline approaching: {tender.title}", f"This tender closes {TenderOut().dump(tender)['deadline_date']}.")
+                sent += 1
+    return sent    
+
