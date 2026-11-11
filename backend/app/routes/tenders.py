@@ -44,3 +44,13 @@ def create_tender(user):
     db.session.add(tender)
     db.session.commit()
     return jsonify(TenderOut().dump(tender)), 201
+
+@bp.patch("/<int:tender_id>")
+@roles_required("admin")
+def update_tender(user, tender_id):
+    tender = find(Tender, tender_id)
+    own(user, tender)
+    for key, value in load(TenderIn, request.get_json(silent=True), partial=True).items():
+        setattr(tender, key, value)
+    db.session.commit()
+    return jsonify(TenderOut().dump(tender))
