@@ -6,3 +6,10 @@ from ..schemas import TenderOut
 from ..utils import roles_required
 
 bp = Blueprint("dashboard", __name__, url_prefix="/api/dashboard")
+
+
+@bp.get("")
+@roles_required()
+def dashboard(user):
+    """Each role gets its own numbers."""
+    pass
