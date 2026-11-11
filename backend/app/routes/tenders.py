@@ -11,3 +11,20 @@ bp = Blueprint("tenders", __name__, url_prefix="/api/tenders")
 def own(user, tender):
     if tender.created_by_id != user.id:
         raise ApiError("You can only manage tenders you created", 403)
+    
+@bp.get("")
+@roles_required()
+def list_tenders(user):
+    status, category = request.args.get("status"), request.args.get("category")
+    if status and status not in STATUSES:
+        raise ApiError(f"status must be one of: {', '.join(STATUSES)}")
+    if user.role == "auditor":
+        status = "awarded"
+    elif user.role == "contractor":
+        status = status or "open"
+    query = Tender.query.order_by(Tender.created_at.desc())
+    if status:
+        query = query.filter_by(status=status)
+    if category:
+        query = query.filter(Tender.category.ilike(category))
+    return jsonify(paginate(query, TenderOut)) 
