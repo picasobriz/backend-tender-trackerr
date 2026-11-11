@@ -28,3 +28,11 @@ def list_tenders(user):
     if category:
         query = query.filter(Tender.category.ilike(category))
     return jsonify(paginate(query, TenderOut)) 
+
+@bp.get("/<int:tender_id>")
+@roles_required()
+def get_tender(user, tender_id):
+    tender = find(Tender, tender_id)
+    if user.role == "auditor" and tender.status != "awarded":
+        raise ApiError("Auditors can only view awarded tenders", 403)
+    return jsonify(TenderOut().dump(tender))
