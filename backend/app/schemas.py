@@ -103,5 +103,6 @@ class BidOut(Schema):
     bidder_name = fields.String(attribute="bidder.name")
     submitted_at = fields.DateTime(format=DATE_FORMAT)
 
+
     class Meta:
         fields = ("id", "tender_id", "tender_title", "bidder_id", "bidder_name", "proposed_amount", "proposal_text", "document_url", "status", "submitted_at")
