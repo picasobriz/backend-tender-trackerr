@@ -67,7 +67,7 @@ class TenderIn(In):
     status = fields.String(validate=v.OneOf(STATUSES, error=f"must be one of: {', '.join(STATUSES)}"))  # used when updating
 
     @validates("deadline_date")
-    def must_be_future(self, value):
+    def must_be_future(self, value, **kwrags):
         if value <= now():
             raise ValidationError("must be in the future")
 
@@ -82,27 +82,100 @@ class ReviewIn(In):
     status = fields.String(required=True, error_messages=MSG, validate=v.OneOf(("accepted", "rejected"), error="must be 'accepted' or 'rejected'"))
 
 
-# ---------- output ----------
+# ==========================================
+# OUTPUT SCHEMAS
+# ==========================================
+
+# TESTED OUTPUT: User information
 class UserOut(Schema):
+    id = fields.Integer()
+    name = fields.String()
+    email = fields.String()
+    role = fields.String()
+    is_verified = fields.Boolean()
+    company_logo_url = fields.String(allow_none=True)
+
     class Meta:
-        fields = ("id", "name", "email", "role", "is_verified", "company_logo_url")
+        fields = (
+            "id",
+            "name",
+            "email",
+            "role",
+            "is_verified",
+            "company_logo_url",
+        )
 
 
+# TESTED OUTPUT: Tender information
 class TenderOut(Schema):
+    id = fields.Integer()
+    title = fields.String()
+    category = fields.String()
     budget = fields.Float()
+    description = fields.String()
+    status = fields.String()
+    cover_image_url = fields.String(allow_none=True)
+
     deadline_date = fields.DateTime(format=DATE_FORMAT)
-    deadline_iso = fields.DateTime(attribute="deadline_date")
+    deadline_iso = fields.DateTime(
+        attribute="deadline_date",
+        dump_only=True,
+        data_key="deadline_iso"
+    )
+
+    created_by_id = fields.Integer()
 
     class Meta:
-        fields = ("id", "title", "category", "budget", "description", "status", "cover_image_url", "deadline_date", "deadline_iso", "created_by_id")
+        fields = (
+            "id",
+            "title",
+            "category",
+            "budget",
+            "description",
+            "status",
+            "cover_image_url",
+            "deadline_date",
+            "deadline_iso",
+            "created_by_id",
+        )
+    class Meta:
+        fields = (
+            "id",
+            "title",
+            "category",
+            "budget",
+            "description",
+            "status",
+            "cover_image_url",
+            "deadline_date",
+            "deadline_iso",
+            "created_by_id",
+        )
 
 
+# TESTED OUTPUT: Bid information
 class BidOut(Schema):
-    proposed_amount = fields.Float()
+    id = fields.Integer()
+    tender_id = fields.Integer()
     tender_title = fields.String(attribute="tender.title")
+    bidder_id = fields.Integer()
     bidder_name = fields.String(attribute="bidder.name")
+    proposed_amount = fields.Float()
+    proposal_text = fields.String()
+    document_url = fields.String(allow_none=True)
+    status = fields.String()
     submitted_at = fields.DateTime(format=DATE_FORMAT)
 
-
     class Meta:
-        fields = ("id", "tender_id", "tender_title", "bidder_id", "bidder_name", "proposed_amount", "proposal_text", "document_url", "status", "submitted_at")
+        fields = (
+            "id",
+            "tender_id",
+            "tender_title",
+            "bidder_id",
+            "bidder_name",
+            "proposed_amount",
+            "proposal_text",
+            "document_url",
+            "status",
+            "submitted_at",
+        )
