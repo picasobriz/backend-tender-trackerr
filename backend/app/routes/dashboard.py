@@ -12,4 +12,8 @@ bp = Blueprint("dashboard", __name__, url_prefix="/api/dashboard")
 @roles_required()
 def dashboard(user):
     """Each role gets its own numbers."""
-    pass
+    if user.role == "admin":
+        mine = Tender.query.filter_by(created_by_id=user.id)
+        received = Bid.query.join(Tender).filter(Tender.created_by_id == user.id)
+        data = {"tenders_created": mine.count(), "open_tenders": mine.filter_by(status="open").count(),
+                "proposals_received": received.count(), "pending_review": received.filter(Bid.status == "pending").count()}
