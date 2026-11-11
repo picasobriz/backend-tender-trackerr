@@ -26,3 +26,4 @@ def dashboard(user):
         total = db.session.query(db.func.coalesce(db.func.sum(Tender.budget), 0)).filter(Tender.status == "awarded").scalar()
         data = {"awarded_tenders": Tender.query.filter_by(status="awarded").count(), "total_awarded_value": float(total),
                 "bids_on_awarded": Bid.query.join(Tender).filter(Tender.status == "awarded").count()}
+    return jsonify(role=user.role, **data)
