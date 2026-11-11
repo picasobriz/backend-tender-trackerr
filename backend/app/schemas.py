@@ -67,7 +67,7 @@ class TenderIn(In):
     status = fields.String(validate=v.OneOf(STATUSES, error=f"must be one of: {', '.join(STATUSES)}"))  # used when updating
 
     @validates("deadline_date")
-    def must_be_future(self, value):
+    def must_be_future(self, value, **kwrags):
         if value <= now():
             raise ValidationError("must be in the future")
 
