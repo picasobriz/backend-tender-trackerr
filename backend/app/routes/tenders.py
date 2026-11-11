@@ -36,3 +36,11 @@ def get_tender(user, tender_id):
     if user.role == "auditor" and tender.status != "awarded":
         raise ApiError("Auditors can only view awarded tenders", 403)
     return jsonify(TenderOut().dump(tender))
+
+@bp.post("")
+@roles_required("admin")
+def create_tender(user):
+    tender = Tender(**load(TenderIn, request.get_json(silent=True)), created_by_id=user.id)
+    db.session.add(tender)
+    db.session.commit()
+    return jsonify(TenderOut().dump(tender)), 201
