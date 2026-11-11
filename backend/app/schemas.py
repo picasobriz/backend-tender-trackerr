@@ -29,3 +29,27 @@ class UTCDateTime(fields.DateTime):
 
 
 # ---------- input ----------
+class In(Schema):
+    class Meta:
+        unknown = EXCLUDE  # ignore fields we do not define
+
+    @pre_load
+    def tidy(self, data, **kwargs):
+        """Trim text; a blank string counts as missing."""
+        if not isinstance(data, dict):
+            return data
+        return {k: x.strip() if isinstance(x, str) else x for k, x in data.items() if not (isinstance(x, str) and not x.strip())}
+
+
+class RegisterIn(In):
+    name = text(100)
+    email = fields.Email(required=True, error_messages={**MSG, "invalid": "is not a valid email address"})
+    password = fields.String(required=True, error_messages=MSG, validate=v.Length(min=8, max=128, error="must be 8 to 128 characters"))
+    role = fields.String(load_default="contractor", validate=v.OneOf(("contractor", "auditor"), error="must be 'contractor' or 'auditor'"))  # admins come from seed.py
+
+
+class LoginIn(In):
+    email = text(120)
+    password = text(128)
+
+
