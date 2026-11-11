@@ -45,3 +45,27 @@ def send_email(to: str, subject: str, body: str):
     except Exception as e:
         print(f"SendGrid error: {e}")
         return False    
+    import cloudinary.uploader
+
+def upload_file(file_storage, folder="documents"):
+    """Upload a file to Cloudinary with extension and size checks."""
+    if not file_storage or not file_storage.filename:
+        raise ApiError("No file provided", 400)
+    
+    ext = file_storage.filename.rsplit(".", 1)[-1].lower()
+    if ext not in ALLOWED_TYPES:
+        raise ApiError(f"File type .{ext} is not allowed. Allowed types: {', '.join(ALLOWED_TYPES)}", 400)
+    
+    # Check size via file pointer
+    file_storage.seek(0, os.SEEK_END)
+    size_bytes = file_storage.tell()
+    file_storage.seek(0)
+    
+    if size_bytes > MAX_MB * 1024 * 1024:
+        raise ApiError(f"File is too large. Max size is {MAX_MB}MB", 413)
+    
+    try:
+        upload_result = cloudinary.uploader.upload(file_storage, folder=folder)
+        return upload_result.get("secure_url")
+    except Exception as e:
+        raise ApiError(f"File upload failed: {str(e)}", 500)
