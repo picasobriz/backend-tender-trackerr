@@ -42,3 +42,10 @@ def review_bid(user, bid_id):
     bid = find(Bid, bid_id)
     if bid.tender.created_by_id != user.id:
         raise ApiError("You can only review bids on tenders you created", 403)
+    status = load(ReviewIn, request.get_json(silent=True))["status"]
+    if bid.tender.status == "awarded":
+        raise ApiError("This tender has already been awarded")
+    bid.status = status
+    if status == "accepted":
+        bid.tender.status = "awarded"
+    db.session.commit()
