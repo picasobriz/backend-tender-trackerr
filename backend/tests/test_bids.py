@@ -30,3 +30,29 @@ def test_cannot_bid_twice(client, scene):
 def test_only_contractors_can_bid(client, scene):
     admin, _, tid = scene
     assert client.post(f"/api/tenders/{tid}/bids", json=BID, headers=admin).status_code == 403
+
+
+def test_bid_validation(client, scene):
+    _, contractor, tid = scene
+    r = client.post(f"/api/tenders/{tid}/bids", json={"proposed_amount": -1}, headers=contractor)
+    assert r.status_code == 400 and set(r.json["details"]) == {"proposed_amount", "proposal_text"}
+
+
+def test_bid_on_missing_tender(client, scene):
+    _, contractor, _ = scene
+    assert client.post("/api/tenders/999/bids", json=BID, headers=contractor).status_code == 404
+
+
+def test_cannot_bid_on_closed_tender(client, scene):
+    admin, contractor, tid = scene
+    client.patch(f"/api/tenders/{tid}", json={"status": "closed"}, headers=admin)
+    r = client.post(f"/api/tenders/{tid}/bids", json=BID, headers=contractor)
+    assert r.status_code == 400 and "closed" in r.json["error"]
+
+
+def test_cannot_bid_after_deadline(client, scene):
+    _, contractor, tid = scene
+    db.session.get(Tender, tid).deadline_date = now() - timedelta(hours=1)
+    db.session.commit()
+    r = client.post(f"/api/tenders/{tid}/bids", json=BID, headers=contractor)
+    assert r.status_code == 400 and "deadline" in r.json["error"]
