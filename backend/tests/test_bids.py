@@ -96,3 +96,21 @@ def test_cannot_award_tender_twice(client, login, scene, outbox):
     client.patch(f"/api/bids/{first_bid}", json={"status": "accepted"}, headers=admin)
     r = client.patch(f"/api/bids/{second_bid}", json={"status": "accepted"}, headers=admin)
     assert r.status_code == 400 and "already been awarded" in r.json["error"]
+
+
+def test_invalid_review_status(client, scene):
+    admin, contractor, tid = scene
+    r = client.patch(f"/api/bids/{bid_id(client, tid, contractor)}", json={"status": "maybe"}, headers=admin)
+    assert r.status_code == 400 and "status" in r.json["details"]
+
+
+def test_only_the_tender_owner_can_review(client, login, scene):
+    _, contractor, tid = scene
+    bid = bid_id(client, tid, contractor)
+    assert client.patch(f"/api/bids/{bid}", json={"status": "accepted"}, headers=contractor).status_code == 403
+    r = client.patch(f"/api/bids/{bid}", json={"status": "accepted"}, headers=login("admin", "other@test.com"))
+    assert r.status_code == 403 and "you created" in r.json["error"]
+
+
+def test_review_missing_bid(client, login):
+    assert client.patch("/api/bids/999", json={"status": "accepted"}, headers=login("admin")).status_code == 404
