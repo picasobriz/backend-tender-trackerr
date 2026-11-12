@@ -13,3 +13,9 @@ bp = Blueprint("bids", __name__, url_prefix="/api")
 @roles_required("contractor")
 def submit_bid(user, tender_id):
     tender = find(Tender, tender_id)
+    if tender.status != "open":
+        raise ApiError(f"This tender is {tender.status} and no longer accepts bids")
+    if tender.deadline_date <= now():
+        raise ApiError("The deadline for this tender has passed")
+    if Bid.query.filter_by(tender_id=tender_id, bidder_id=user.id).first():
+        raise ApiError("You have already bid on this tender", 409)
