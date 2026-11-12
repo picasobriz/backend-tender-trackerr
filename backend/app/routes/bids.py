@@ -5,3 +5,5 @@ from ..extensions import db
 from ..models import Bid, Tender, now
 from ..schemas import BidIn, BidOut, ReviewIn
 from ..utils import ApiError, find, load, paginate, roles_required
+
+bp = Blueprint("bids", __name__, url_prefix="/api")
