@@ -16,3 +16,5 @@ def upload(user):
         raise ApiError("No file received. Send it as multipart form field 'file'")
     if kind not in ("logo", "cover", "bid"):
         raise ApiError("kind must be one of: logo, cover, bid")
+    url = services.upload_file(file, kind)
+    return jsonify(url=url), 201
