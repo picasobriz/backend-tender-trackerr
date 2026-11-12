@@ -49,3 +49,11 @@ def roles_required(*roles):
     return decorator
 
 
+def paginate(query, schema):
+    """Server-side pagination: ?page=1&per_page=10. `schema` is the output schema class for each item."""
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    if page < 1 or not 1 <= per_page <= 50:
+        raise ApiError("page must be >= 1 and per_page must be between 1 and 50")
+    result = query.paginate(page=page, per_page=per_page, error_out=False)
+    return {"items": schema(many=True).dump(result.items), "page": result.page, "pages": result.pages, "total": result.total}
