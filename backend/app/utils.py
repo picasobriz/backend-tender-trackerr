@@ -32,3 +32,20 @@ def find(model, obj_id):
         raise ApiError(f"{model.__name__} {obj_id} not found", 404)
     return obj
 
+
+def roles_required(*roles):
+    """Require a valid JWT (and one of `roles`, if given). Passes the current user as the first argument."""
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            verify_jwt_in_request()
+            user = db.session.get(User, int(get_jwt_identity()))
+            if not user:
+                raise ApiError("Account no longer exists", 401)
+            if roles and user.role not in roles:
+                raise ApiError(f"Access denied: requires {' or '.join(roles)} role", 403)
+            return fn(user, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
