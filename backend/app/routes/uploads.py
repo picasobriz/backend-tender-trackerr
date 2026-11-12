@@ -17,4 +17,7 @@ def upload(user):
     if kind not in ("logo", "cover", "bid"):
         raise ApiError("kind must be one of: logo, cover, bid")
     url = services.upload_file(file, kind)
+    if kind == "logo":
+        user.company_logo_url = url
+        db.session.commit()
     return jsonify(url=url), 201
