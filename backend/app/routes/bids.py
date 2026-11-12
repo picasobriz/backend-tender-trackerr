@@ -34,3 +34,11 @@ def list_bids(user):
     if request.args.get("tender_id", type=int):
         query = query.filter(Bid.tender_id == request.args.get("tender_id", type=int))
     return jsonify(paginate(query, BidOut))
+
+
+@bp.patch("/bids/<int:bid_id>")
+@roles_required("admin")
+def review_bid(user, bid_id):
+    bid = find(Bid, bid_id)
+    if bid.tender.created_by_id != user.id:
+        raise ApiError("You can only review bids on tenders you created", 403)
