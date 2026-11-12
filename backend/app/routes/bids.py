@@ -23,3 +23,11 @@ def submit_bid(user, tender_id):
     db.session.add(bid)
     db.session.commit()
     return jsonify(BidOut().dump(bid)), 201
+
+
+@bp.get("/bids")
+@roles_required("contractor", "admin")
+def list_bids(user):
+    """Contractors see their own bids; admins see proposals received on their tenders."""
+    query = Bid.query.join(Tender).order_by(Bid.submitted_at.desc())
+    query = query.filter(Bid.bidder_id == user.id) if user.role == "contractor" else query.filter(Tender.created_by_id == user.id)
