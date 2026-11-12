@@ -49,3 +49,5 @@ def review_bid(user, bid_id):
     if status == "accepted":
         bid.tender.status = "awarded"
     db.session.commit()
+    services.send_email(bid.bidder.email, f"Your bid was {bid.status}", f"Your bid on '{bid.tender.title}' has been {bid.status}.")
+    return jsonify(BidOut().dump(bid))
