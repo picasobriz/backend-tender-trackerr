@@ -19,3 +19,7 @@ def submit_bid(user, tender_id):
         raise ApiError("The deadline for this tender has passed")
     if Bid.query.filter_by(tender_id=tender_id, bidder_id=user.id).first():
         raise ApiError("You have already bid on this tender", 409)
+    bid = Bid(**load(BidIn, request.get_json(silent=True)), tender_id=tender_id, bidder_id=user.id)
+    db.session.add(bid)
+    db.session.commit()
+    return jsonify(BidOut().dump(bid)), 201
