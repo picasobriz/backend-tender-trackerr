@@ -56,3 +56,16 @@ def test_cannot_bid_after_deadline(client, scene):
     db.session.commit()
     r = client.post(f"/api/tenders/{tid}/bids", json=BID, headers=contractor)
     assert r.status_code == 400 and "deadline" in r.json["error"]
+
+
+def test_each_role_sees_the_right_bids(client, login, scene):
+    admin, contractor, tid = scene
+    client.post(f"/api/tenders/{tid}/bids", json=BID, headers=contractor)
+    assert client.get("/api/bids", headers=contractor).json["total"] == 1
+    assert client.get(f"/api/bids?tender_id={tid}", headers=admin).json["total"] == 1
+    assert client.get("/api/bids", headers=login("contractor", "other@test.com")).json["total"] == 0
+    assert client.get("/api/bids", headers=login("admin", "admin2@test.com")).json["total"] == 0
+
+
+def test_auditor_cannot_list_bids(client, login):
+    assert client.get("/api/bids", headers=login("auditor")).status_code == 403
