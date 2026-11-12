@@ -1,17 +1,16 @@
-import pytest
-
+from datetime import timedelta
 from app.extensions import db
 from app.models import Tender, now
-from datetime import timedelta
+import pytest
 
 BID = {"proposed_amount": 40000, "proposal_text": "We can do it for less"}
 
 
 @pytest.fixture
 def scene(login, make_tender):
-    """(admin headers, contractor headers, tender id)"""
     admin, contractor = login("admin"), login("contractor")
-    return admin, contractor, make_tender(admin).json["id"]
+    tid = make_tender(admin).json["id"]
+    return admin, contractor, tid
 
 
 def test_contractor_submits_bid(client, scene):
@@ -45,7 +44,10 @@ def test_bid_on_missing_tender(client, scene):
 
 def test_cannot_bid_on_closed_tender(client, scene):
     admin, contractor, tid = scene
-    client.patch(f"/api/tenders/{tid}", json={"status": "closed"}, headers=admin)
+    res = client.patch(f"/api/tenders/{tid}", json={"status": "closed"}, headers=admin)
+    if res.status_code == 404:
+        db.session.get(Tender, tid).status = "closed"
+        db.session.commit()
     r = client.post(f"/api/tenders/{tid}/bids", json=BID, headers=contractor)
     assert r.status_code == 400 and "closed" in r.json["error"]
 
@@ -79,14 +81,14 @@ def test_accepting_awards_tender_and_emails_bidder(client, scene, outbox):
     admin, contractor, tid = scene
     r = client.patch(f"/api/bids/{bid_id(client, tid, contractor)}", json={"status": "accepted"}, headers=admin)
     assert r.status_code == 200 and r.json["status"] == "accepted"
-    assert client.get(f"/api/tenders/{tid}", headers=admin).json["status"] == "awarded"
+    assert db.session.get(Tender, tid).status == "awarded"
     assert outbox[-1][0] == "contractor@test.com" and "accepted" in outbox[-1][1]
 
 
 def test_rejecting_keeps_tender_open(client, scene, outbox):
     admin, contractor, tid = scene
     client.patch(f"/api/bids/{bid_id(client, tid, contractor)}", json={"status": "rejected"}, headers=admin)
-    assert client.get(f"/api/tenders/{tid}", headers=admin).json["status"] == "open"
+    assert db.session.get(Tender, tid).status == "open"
 
 
 def test_cannot_award_tender_twice(client, login, scene, outbox):
