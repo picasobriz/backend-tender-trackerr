@@ -69,3 +69,30 @@ def test_each_role_sees_the_right_bids(client, login, scene):
 
 def test_auditor_cannot_list_bids(client, login):
     assert client.get("/api/bids", headers=login("auditor")).status_code == 403
+
+
+def bid_id(client, tid, headers):
+    return client.post(f"/api/tenders/{tid}/bids", json=BID, headers=headers).json["id"]
+
+
+def test_accepting_awards_tender_and_emails_bidder(client, scene, outbox):
+    admin, contractor, tid = scene
+    r = client.patch(f"/api/bids/{bid_id(client, tid, contractor)}", json={"status": "accepted"}, headers=admin)
+    assert r.status_code == 200 and r.json["status"] == "accepted"
+    assert client.get(f"/api/tenders/{tid}", headers=admin).json["status"] == "awarded"
+    assert outbox[-1][0] == "contractor@test.com" and "accepted" in outbox[-1][1]
+
+
+def test_rejecting_keeps_tender_open(client, scene, outbox):
+    admin, contractor, tid = scene
+    client.patch(f"/api/bids/{bid_id(client, tid, contractor)}", json={"status": "rejected"}, headers=admin)
+    assert client.get(f"/api/tenders/{tid}", headers=admin).json["status"] == "open"
+
+
+def test_cannot_award_tender_twice(client, login, scene, outbox):
+    admin, first, tid = scene
+    second = login("contractor", "second@test.com")
+    first_bid, second_bid = bid_id(client, tid, first), bid_id(client, tid, second)
+    client.patch(f"/api/bids/{first_bid}", json={"status": "accepted"}, headers=admin)
+    r = client.patch(f"/api/bids/{second_bid}", json={"status": "accepted"}, headers=admin)
+    assert r.status_code == 400 and "already been awarded" in r.json["error"]
