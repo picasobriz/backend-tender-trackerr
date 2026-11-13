@@ -37,3 +37,19 @@ def test_contractor_dashboard(client, login, make_tender):
 
     assert (d["my_bids"], d["pending"], d["accepted"]) == (1, 1, 0)
     assert d["upcoming_deadlines"][0]["id"] == tid
+
+def test_auditor_dashboard_counts_awarded_only(client, login, make_tender):
+    admin = login("admin")
+    tid = make_tender(admin, budget=2500).json["id"]
+
+    make_tender(admin)  # stays open, must not be counted
+
+    client.patch(
+        f"/api/tenders/{tid}",
+        json={"status": "awarded"},
+        headers=admin
+    )
+
+    d = client.get("/api/dashboard", headers=login("auditor")).json
+
+    assert (d["awarded_tenders"], d["total_awarded_value"]) == (1, 2500)
