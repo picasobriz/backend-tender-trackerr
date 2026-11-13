@@ -22,3 +22,18 @@ def test_admin_dashboard(client, login, make_tender):
         d["proposals_received"],
         d["pending_review"]
     ) == ("admin", 1, 1, 1, 1)
+
+def test_contractor_dashboard(client, login, make_tender):
+    contractor = login("contractor")
+    tid = make_tender(login("admin")).json["id"]
+
+    client.post(
+        f"/api/tenders/{tid}/bids",
+        json=BID,
+        headers=contractor
+    )
+
+    d = client.get("/api/dashboard", headers=contractor).json
+
+    assert (d["my_bids"], d["pending"], d["accepted"]) == (1, 1, 0)
+    assert d["upcoming_deadlines"][0]["id"] == tid
