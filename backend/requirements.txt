@@ -16,25 +16,19 @@ jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 Mako==1.4.3
 MarkupSafe==3.0.4
-<<<<<<< Updated upstream
 marshmallow==4.4.0
+mistune==3.4.0
 packaging==26.3
 pluggy==1.7.0
 psycopg2-binary==2.9.13
+pygraphviz==2.0.4
 Pygments==2.21.0
 PyJWT==2.15.1
 pytest==9.2.0
-=======
-mistune==3.4.0
-packaging==26.3
-psycopg2-binary==2.9.13
-pygraphviz==2.0.4
-PyJWT==2.15.1
 PyYAML==6.0.3
 referencing==0.37.0
 rpds-py==2026.9.1
 six==1.17.0
->>>>>>> Stashed changes
 SQLAlchemy==2.1.8
 typing_extensions==4.16.0
 Werkzeug==3.1.9

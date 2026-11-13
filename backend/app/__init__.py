@@ -1,7 +1,6 @@
 import os
-
 from flasgger import Swagger
-from flask import Flask, jsonify
+from flask import Blueprint, Flask, jsonify
 from flask_cors import CORS
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import HTTPException
@@ -9,8 +8,10 @@ from werkzeug.exceptions import HTTPException
 from . import services
 from .config import Config
 from .extensions import db, jwt
-from .routes import blueprints
 from .utils import ApiError
+
+# Import route modules safely
+from .routes import auth, tenders, bids, dashboard, uploads
 
 
 def create_app(config=Config):
@@ -21,8 +22,12 @@ def create_app(config=Config):
     CORS(app)
     Swagger(app, template_file=os.path.join(app.root_path, "..", "openapi.yaml"))  # docs at /apidocs
 
-    for bp in blueprints:
-        app.register_blueprint(bp)
+    # Automatically find and register any Blueprint instance from the route modules
+    for module in [auth, tenders, bids, dashboard, uploads]:
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if isinstance(attr, Blueprint):
+                app.register_blueprint(attr)
 
     # --- friendly JSON errors everywhere ---
     @app.errorhandler(ApiError)
