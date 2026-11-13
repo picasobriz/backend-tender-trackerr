@@ -63,3 +63,5 @@ __pycache__/
 *.py[cod]
 venv/
 .env
+backend/venv/
+backend/tests/conftest.py

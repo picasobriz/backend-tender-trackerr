@@ -13,4 +13,5 @@ env/
 .vscode/
 .idea/
 *.swp
-*.swo
+*.swobackend/venv/
+backend/tests/conftest.py
