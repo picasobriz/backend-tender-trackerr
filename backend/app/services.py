@@ -25,6 +25,8 @@ def read_token(token, max_age=86400):
         return URLSafeTimedSerializer(current_app.config["SECRET_KEY"]).loads(token, salt="verify", max_age=max_age)
     except BadSignature:  # SignatureExpired is a subclass
         raise ApiError("Invalid or expired verification token")
+
+
 def send_email(to, subject, body):
     """Send via SendGrid. Without an API key it logs instead, so local dev still works."""
     key = current_app.config.get("SENDGRID_API_KEY")
@@ -36,7 +38,8 @@ def send_email(to, subject, body):
         return True
     except Exception as e:  # never let a mail failure break an API request
         current_app.logger.error("SendGrid failed for %s: %s", to, e)
-        return False    
+        return False
+
 
 def upload_file(file, kind):
     """Validate, resize (images) and store a file on Cloudinary; returns its secure URL."""
@@ -57,6 +60,7 @@ def upload_file(file, kind):
         current_app.logger.error("Cloudinary failed: %s", e)
         raise ApiError("Upload failed, please try again later", 502)
 
+
 def send_deadline_reminders(days=2):
     """Email verified contractors who have not bid on open tenders closing within days. Returns emails sent."""
     closing = Tender.query.filter(Tender.status == "open", Tender.deadline_date.between(now(), now() + timedelta(days=days))).all()
@@ -68,5 +72,4 @@ def send_deadline_reminders(days=2):
             if user.id not in already_bid:
                 send_email(user.email, f"Deadline approaching: {tender.title}", f"This tender closes {TenderOut().dump(tender)['deadline_date']}.")
                 sent += 1
-    return sent    
-
+    return sent
