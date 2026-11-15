@@ -14,20 +14,12 @@ bp = Blueprint("bids", __name__, url_prefix="/api")
 def submit_bid(user, tender_id):
     tender = find(Tender, tender_id)
     if tender.status != "open":
-        raise ApiError("Cannot bid on a closed or awarded tender", 400)
+        raise ApiError(f"This tender is {tender.status} and no longer accepts bids")
     if tender.deadline_date <= now():
-        raise ApiError("Tender deadline has passed", 400)
-    if Bid.query.filter_by(tender_id=tender.id, bidder_id=user.id).first():
+        raise ApiError("The deadline for this tender has passed")
+    if Bid.query.filter_by(tender_id=tender_id, bidder_id=user.id).first():
         raise ApiError("You have already bid on this tender", 409)
-
-    data = load(BidIn, request.get_json(silent=True))
-    bid = Bid(
-        tender_id=tender.id,
-        bidder_id=user.id,
-        proposed_amount=data["proposed_amount"],
-        proposal_text=data["proposal_text"],
-        document_url=data.get("document_url"),
-    )
+    bid = Bid(**load(BidIn, request.get_json(silent=True)), tender_id=tender_id, bidder_id=user.id)
     db.session.add(bid)
     db.session.commit()
     return jsonify(BidOut().dump(bid)), 201
@@ -36,21 +28,11 @@ def submit_bid(user, tender_id):
 @bp.get("/bids")
 @roles_required("contractor", "admin")
 def list_bids(user):
-    query = Bid.query
-    if user.role == "contractor":
-        query = query.filter(Bid.bidder_id == user.id)
-    else:
-        query = query.filter(Bid.tender.has(Tender.created_by_id == user.id))
-
-    tender_id = request.args.get("tender_id", type=int)
-    if tender_id is not None:
-        query = query.filter(Bid.tender_id == tender_id)
-
-    status = request.args.get("status")
-    if status:
-        query = query.filter(Bid.status == status)
-
-    query = query.order_by(Bid.submitted_at.desc(), Bid.id.desc())
+    """Contractors see their own bids; admins see proposals received on their tenders."""
+    query = Bid.query.join(Tender).order_by(Bid.submitted_at.desc())
+    query = query.filter(Bid.bidder_id == user.id) if user.role == "contractor" else query.filter(Tender.created_by_id == user.id)
+    if request.args.get("tender_id", type=int):
+        query = query.filter(Bid.tender_id == request.args.get("tender_id", type=int))
     return jsonify(paginate(query, BidOut))
 
 
@@ -60,22 +42,12 @@ def review_bid(user, bid_id):
     bid = find(Bid, bid_id)
     if bid.tender.created_by_id != user.id:
         raise ApiError("You can only review bids on tenders you created", 403)
-
-    data = load(ReviewIn, request.get_json(silent=True))
-    new_status = data["status"]
-
-    if new_status == "accepted":
-        if bid.tender.status == "awarded":
-            raise ApiError("This tender has already been awarded", 400)
-        bid.status = "accepted"
+    status = load(ReviewIn, request.get_json(silent=True))["status"]
+    if bid.tender.status == "awarded":
+        raise ApiError("This tender has already been awarded")
+    bid.status = status
+    if status == "accepted":
         bid.tender.status = "awarded"
-    else:
-        bid.status = "rejected"
-
     db.session.commit()
-    services.send_email(
-        bid.bidder.email,
-        f"Bid {bid.status}: {bid.tender.title}",
-        f"Your bid for '{bid.tender.title}' has been {bid.status}.",
-    )
-    return jsonify(BidOut().dump(bid)), 200
+    services.send_email(bid.bidder.email, f"Your bid was {bid.status}", f"Your bid on '{bid.tender.title}' has been {bid.status}.")
+    return jsonify(BidOut().dump(bid))
