@@ -17,3 +17,9 @@ MAX_MB = 5
 
 def make_token(email):
     return URLSafeTimedSerializer(current_app.config["SECRET_KEY"]).dumps(email, salt="verify")
+
+def read_token(token, max_age=86400):
+    try:
+        return URLSafeTimedSerializer(current_app.config["SECRET_KEY"]).loads(token, salt="verify", max_age=max_age)
+    except BadSignature:
+        raise ApiError("Invalid or expired verification token", 400)
