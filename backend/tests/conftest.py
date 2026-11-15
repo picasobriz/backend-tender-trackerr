@@ -16,6 +16,7 @@ class TestConfig:
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = "test-secret-key-at-least-32-bytes-long"
     JWT_SECRET_KEY = "test-secret-key-at-least-32-bytes-long"
 
 
@@ -149,23 +150,24 @@ def login(app):
 
 @pytest.fixture
 def make_tender(client):
-    def _make_tender(admin_headers, title="Road repair"):
+    def _make_tender(admin_headers, title="Road repair", **overrides):
         payload = {
             "title": title,
             "category": "Infrastructure",
             "budget": 100000,
             "description": "Road resurfacing and drainage repair",
             "deadline_date": (now() + timedelta(days=7)).isoformat(),
+            **overrides,
         }
         res = client.post("/api/tenders", json=payload, headers=admin_headers)
-        if res.status_code == 201:
+        if res.status_code != 404:
             return res
         admin = User.query.filter_by(role="admin").first()
         tender = Tender(
-            title=title,
-            category="Infrastructure",
-            budget=100000,
-            description="Road resurfacing and drainage repair",
+            title=payload["title"],
+            category=payload["category"],
+            budget=payload["budget"],
+            description=payload["description"],
             deadline_date=now() + timedelta(days=7),
             status="open",
             created_by_id=admin.id,
