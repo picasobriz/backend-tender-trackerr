@@ -13,7 +13,7 @@ class ApiError(Exception):
 
     def __init__(self, message, status=400, details=None):
         super().__init__(message)
-        self.message, self.status, self.details = message, status, details or {}
+        self.message, self.status, self.status_code, self.details = message, status, status, details or {}
 
 
 def load(schema, data, **options):
