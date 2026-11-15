@@ -4,4 +4,10 @@ from .dashboard import bp as dashboard_bp
 from .tenders import bp as tenders_bp
 from .uploads import bp as uploads_bp
 
-blueprints = [auth_bp, tenders_bp, bids_bp, uploads_bp, dashboard_bp]
+blueprints = [
+    auth_bp,
+    bids_bp,
+    dashboard_bp,
+    tenders_bp,
+    uploads_bp,
+]
