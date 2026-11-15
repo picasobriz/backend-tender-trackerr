@@ -166,5 +166,6 @@ def test_no_reminder_if_already_bid_or_deadline_far(app, outbox):
     )
     db.session.commit()
 
+
     assert services.send_deadline_reminders() == 0
     assert outbox == []
