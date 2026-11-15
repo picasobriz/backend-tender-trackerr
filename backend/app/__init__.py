@@ -1,33 +1,41 @@
 import os
+
+import cloudinary
 from flasgger import Swagger
-from flask import Blueprint, Flask, jsonify
+from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_migrate import Migrate
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import HTTPException
 
 from . import services
 from .config import Config
 from .extensions import db, jwt
+from .routes import blueprints
 from .utils import ApiError
 
-# Import route modules safely
-from .routes import auth, tenders, bids, dashboard, uploads
+migrate = Migrate()
 
 
 def create_app(config=Config):
     app = Flask(__name__)
     app.config.from_object(config)
     db.init_app(app)
+    migrate.init_app(app, db)
     jwt.init_app(app)
-    CORS(app)
+    CORS(app, origins=app.config["CORS_ORIGINS"])
+    
+    # Initialize Cloudinary configuration
+    cloudinary.config(
+        cloud_name=app.config.get("CLOUDINARY_CLOUD_NAME"),
+        api_key=app.config.get("CLOUDINARY_API_KEY"),
+        api_secret=app.config.get("CLOUDINARY_API_SECRET")
+    )
+
     Swagger(app, template_file=os.path.join(app.root_path, "..", "openapi.yaml"))  # docs at /apidocs
 
-    # Automatically find and register any Blueprint instance from the route modules
-    for module in [auth, tenders, bids, dashboard, uploads]:
-        for attr_name in dir(module):
-            attr = getattr(module, attr_name)
-            if isinstance(attr, Blueprint):
-                app.register_blueprint(attr)
+    for bp in blueprints:
+        app.register_blueprint(bp)
 
     # --- friendly JSON errors everywhere ---
     @app.errorhandler(ApiError)
@@ -52,6 +60,10 @@ def create_app(config=Config):
     jwt.unauthorized_loader(lambda reason: (jsonify(error="Login required", details={}), 401))
     jwt.invalid_token_loader(lambda reason: (jsonify(error="Invalid token, please log in again", details={}), 401))
     jwt.expired_token_loader(lambda header, payload: (jsonify(error="Session expired, please log in again", details={}), 401))
+
+    @app.get("/api/health")
+    def health():
+        return jsonify(status="ok")
 
     @app.cli.command("send-reminders")
     def send_reminders():
