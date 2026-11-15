@@ -23,3 +23,18 @@ def read_token(token, max_age=86400):
         return URLSafeTimedSerializer(current_app.config["SECRET_KEY"]).loads(token, salt="verify", max_age=max_age)
     except BadSignature:
         raise ApiError("Invalid or expired verification token", 400)
+
+def send_email(to, subject, body):
+    """Send via SendGrid. Without an API key it logs instead, so local dev still works."""
+    key = current_app.config.get("SENDGRID_API_KEY")
+    if not key:
+        if has_app_context():
+            current_app.logger.info("EMAIL to %s | %s | %s", to, subject, body)
+        return False
+    try:
+        SendGridAPIClient(key).send(Mail(current_app.config["MAIL_FROM"], to, subject, plain_text_content=body))
+        return True
+    except Exception as e:
+        if has_app_context():
+            current_app.logger.error("SendGrid failed for %s: %s", to, e)
+        return False    
