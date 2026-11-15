@@ -66,21 +66,25 @@ def file(name, data=b"x"):
 @pytest.fixture
 def cloud(monkeypatch):
     calls = {}
+
     def fake_upload(f, **options):
         calls.update(options)
         return {"secure_url": "https://cdn.test/file"}
+
     monkeypatch.setattr(services.cloudinary.uploader, "upload", fake_upload)
     return calls
 
 
 def test_images_are_resized_before_storing(cloud):
     assert services.upload_file(file("logo.PNG"), "logo") == "https://cdn.test/file"
-    assert cloud["transformation"]["width"] == 800 and cloud["resource_type"] == "image"
+    assert cloud["transformation"]["width"] == 800
+    assert cloud["resource_type"] == "image"
 
 
 def test_documents_are_stored_raw_without_resize(cloud):
     services.upload_file(file("bid.pdf"), "bid")
-    assert cloud["resource_type"] == "raw" and "transformation" not in cloud
+    assert cloud["resource_type"] == "raw"
+    assert "transformation" not in cloud
 
 
 @pytest.mark.parametrize("name", ["virus.exe", "noextension"])
@@ -97,41 +101,71 @@ def test_oversized_file_rejected(cloud, monkeypatch):
     assert e.value.status == 413
 
 
-def test_cloudinary_outage_gives_friendly_error(monkeypatch):
+def test_cloudinary_outage_gives_friendly_error(app, monkeypatch):
     def broken(f, **o):
         raise RuntimeError("down")
+
     monkeypatch.setattr(services.cloudinary.uploader, "upload", broken)
+
     with pytest.raises(ApiError, match="try again later") as e:
         services.upload_file(file("a.png"), "logo")
+
     assert e.value.status == 502
 
 
 # ---- deadline reminders ----
 def add_user(email, role):
-    user = User(name=role, email=email, role=role, is_verified=True, password_hash="x")
+    user = User(
+        name=role,
+        email=email,
+        role=role,
+        is_verified=True,
+        password_hash="x",
+    )
     db.session.add(user)
     db.session.commit()
     return user
 
 
 def add_tender(admin, days):
-    tender = Tender(title="T", category="C", budget=1, description="d", deadline_date=now() + timedelta(days=days), created_by_id=admin.id)
+    tender = Tender(
+        title="T",
+        category="C",
+        budget=1,
+        description="d",
+        deadline_date=now() + timedelta(days=days),
+        created_by_id=admin.id,
+    )
     db.session.add(tender)
     db.session.commit()
     return tender
 
 
 def test_reminders_go_to_contractors_who_have_not_bid(app, outbox):
-    admin, contractor = add_user("a@t.com", "admin"), add_user("c@t.com", "contractor")
+    admin = add_user("a@t.com", "admin")
+    contractor = add_user("c@t.com", "contractor")
     add_tender(admin, days=1)
+
     assert services.send_deadline_reminders() == 1
     assert outbox[0][0] == "c@t.com"
 
 
 def test_no_reminder_if_already_bid_or_deadline_far(app, outbox):
-    admin, contractor = add_user("a@t.com", "admin"), add_user("c@t.com", "contractor")
-    soon, far = add_tender(admin, days=1), add_tender(admin, days=30)
-    db.session.add(Bid(tender_id=soon.id, bidder_id=contractor.id, proposed_amount=1, proposal_text="x"))
+    admin = add_user("a@t.com", "admin")
+    contractor = add_user("c@t.com", "contractor")
+    soon = add_tender(admin, days=1)
+    add_tender(admin, days=30)
+
+    db.session.add(
+        Bid(
+            tender_id=soon.id,
+            bidder_id=contractor.id,
+            proposed_amount=1,
+            proposal_text="x",
+        )
+    )
     db.session.commit()
+
+
     assert services.send_deadline_reminders() == 0
     assert outbox == []

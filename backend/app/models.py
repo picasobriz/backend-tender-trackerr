@@ -1,7 +1,5 @@
 from datetime import datetime, timezone
-
 from werkzeug.security import check_password_hash, generate_password_hash
-
 from .extensions import db
 
 
@@ -27,6 +25,16 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "role": self.role,
+            "is_verified": self.is_verified,
+            "company_logo_url": self.company_logo_url,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
 
 
 class Tender(db.Model):
@@ -41,8 +49,24 @@ class Tender(db.Model):
     cover_image_url = db.Column(db.String(500))
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=now)
+    
+    # Relationships
+    creator = db.relationship("User", backref="tenders")
     bids = db.relationship("Bid", backref="tender", cascade="all, delete-orphan")
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "category": self.category,
+            "budget": float(self.budget) if self.budget is not None else 0.0,
+            "description": self.description,
+            "deadline_date": self.deadline_date.isoformat() if self.deadline_date else None,
+            "status": self.status,
+            "cover_image_url": self.cover_image_url,
+            "created_by_id": self.created_by_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
 
 
 class Bid(db.Model):
@@ -56,4 +80,16 @@ class Bid(db.Model):
     document_url = db.Column(db.String(500))
     status = db.Column(db.Enum("pending", "accepted", "rejected", name="bid_status"), nullable=False, default="pending")
     submitted_at = db.Column(db.DateTime, default=now)
-    bidder = db.relationship("User")
+    bidder = db.relationship("User", backref="bids")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "tender_id": self.tender_id,
+            "bidder_id": self.bidder_id,
+            "proposed_amount": float(self.proposed_amount) if self.proposed_amount is not None else 0.0,
+            "proposal_text": self.proposal_text,
+            "document_url": self.document_url,
+            "status": self.status,
+            "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None
+        }
