@@ -25,37 +25,42 @@ def test_expired_token_is_rejected(app):
         services.read_token(services.make_token("a@b.com"), max_age=-1)
 
 
-# ---- SendGrid ----
-class FakeSendGrid:
+# ---- Resend ----
+class FakeResend:
     sent, fail = [], False
 
-    def __init__(self, key):
-        pass
-
-    def send(self, mail):
-        if self.fail:
+    @classmethod
+    def send(cls, params):
+        if cls.fail:
             raise RuntimeError("boom")
-        self.sent.append(mail)
+        cls.sent.append(params)
+        return {"id": "test-email-id"}
 
 
 def test_email_without_api_key_is_only_logged(app):
-    app.config["SENDGRID_API_KEY"] = None
+    app.config["RESEND_API_KEY"] = None
     assert services.send_email("a@b.com", "Hi", "Body") is False
 
 
-def test_email_sent_through_sendgrid(app, monkeypatch):
-    app.config["SENDGRID_API_KEY"] = "key"
-    FakeSendGrid.sent, FakeSendGrid.fail = [], False
-    monkeypatch.setattr(services, "SendGridAPIClient", FakeSendGrid)
+def test_email_sent_through_resend(app, monkeypatch):
+    app.config["RESEND_API_KEY"] = "test-key"
+    FakeResend.sent, FakeResend.fail = [], False
+    monkeypatch.setattr(services.resend.Emails, "send", FakeResend.send)
+
     assert services.send_email("a@b.com", "Hi", "Body") is True
-    assert len(FakeSendGrid.sent) == 1
+    assert len(FakeResend.sent) == 1
+    assert FakeResend.sent[0]["to"] == ["a@b.com"]
+    assert FakeResend.sent[0]["subject"] == "Hi"
+    assert FakeResend.sent[0]["text"] == "Body"
 
 
 def test_email_failure_never_raises(app, monkeypatch):
-    app.config["SENDGRID_API_KEY"] = "key"
-    FakeSendGrid.fail = True
-    monkeypatch.setattr(services, "SendGridAPIClient", FakeSendGrid)
+    app.config["RESEND_API_KEY"] = "test-key"
+    FakeResend.fail = True
+    monkeypatch.setattr(services.resend.Emails, "send", FakeResend.send)
+
     assert services.send_email("a@b.com", "Hi", "Body") is False
+    FakeResend.fail = False
 
 
 # ---- Cloudinary ----

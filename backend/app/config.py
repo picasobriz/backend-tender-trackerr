@@ -18,7 +18,7 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = 3600  # seconds
     SQLALCHEMY_DATABASE_URI = database_url(os.getenv("DATABASE_URL"))
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")  # set to your frontend URL in production
-    SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+    RESEND_API_KEY = os.getenv("RESEND_API_KEY")
     MAIL_FROM = os.getenv("MAIL_FROM", "no-reply@tendertrack.com")
     
     # Cloudinary Configuration
@@ -30,7 +30,7 @@ class Config:
 class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
-    SENDGRID_API_KEY = None
+    RESEND_API_KEY = None
     CLOUDINARY_CLOUD_NAME = "test_cloud"
     CLOUDINARY_API_KEY = "test_key"
     CLOUDINARY_API_SECRET = "test_secret"
