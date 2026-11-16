@@ -7,8 +7,21 @@ load_dotenv()  # reads backend/.env, so python run.py and gunicorn see the same 
 
 
 def database_url(raw):
-    """No DATABASE_URL -> local SQLite file (instant start). Fixes the 'postgres://' prefix some hosts hand out."""
-    return raw.replace("postgres://", "postgresql://", 1) if raw else "sqlite:///tendertrack.db"
+    """Normalize PostgreSQL URLs to use the installed psycopg2 driver."""
+    if not raw:
+        return "sqlite:///tendertrack.db"
+
+    if raw.startswith("postgres://"):
+        raw = raw.replace("postgres://", "postgresql://", 1)
+
+    if raw.startswith("postgresql://"):
+        raw = raw.replace(
+            "postgresql://",
+            "postgresql+psycopg2://",
+            1,
+        )
+
+    return raw
 
 
 class Config:
