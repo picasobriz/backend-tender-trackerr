@@ -23,6 +23,7 @@ class TestConfig:
     JWT_SECRET_KEY = "test-secret-key-at-least-32-bytes-long"
     SECRET_KEY = "test-secret-key-at-least-32-bytes-long"
     MAIL_FROM = "no-reply@tendertrack.com"
+    CORS_ORIGINS = "*"
 
 
 # Ensure ApiError exists and uses the correct status attribute.
