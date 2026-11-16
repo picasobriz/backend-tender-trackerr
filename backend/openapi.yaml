@@ -1,4 +1,4 @@
-{swagger: '2.0', info: {title: TenderTrack API, version: 1.0.0, description: Tender management and bidding API.}, basePath: /, schemes: [http], consumes: [application/json], produces: [application/json],
+{swagger: '2.0', info: {title: TenderTrack API, version: 1.0.0, description: Tender management and bidding API.}, basePath: /, schemes: [https], consumes: [application/json], produces: [application/json],
   securityDefinitions: {BearerAuth: {type: apiKey, name: Authorization, in: header, description: Bearer JWT token}}, paths: {/api/health: {get: {tags: [System], summary: Check API health, responses: {200: {
             description: API running}}}}, /api/auth/register: {post: {tags: [Authentication], summary: Register contractor or auditor, parameters: [{in: body, name: body, required: true, schema: {$ref: '#/definitions/Register'}}],
         responses: {201: {description: Registered}, 400: {description: Validation error}, 409: {description: Email already exists}}}}, /api/auth/verify: {post: {tags: [Authentication], summary: Verify account,
