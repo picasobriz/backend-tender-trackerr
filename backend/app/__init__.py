@@ -20,6 +20,14 @@ migrate = Migrate()
 def create_app(config=Config):
     app = Flask(__name__)
     app.config.from_object(config)
+
+    # Prevent stale PostgreSQL connections from breaking requests.
+    app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"].update({
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    })
+
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
