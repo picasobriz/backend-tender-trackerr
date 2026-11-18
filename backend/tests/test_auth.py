@@ -90,3 +90,88 @@ def test_expired_token_rejected(app, client):
 def test_token_for_deleted_account_rejected(app, client):
     r = client.get("/api/auth/me", headers={"Authorization": f"Bearer {create_access_token(identity='999')}"})
     assert r.status_code == 401 and "no longer exists" in r.json["error"]
+
+def test_forgot_password_returns_generic_response(client, login, outbox):
+    login("contractor")
+
+    response = client.post(
+        "/api/auth/forgot-password",
+        json={"email": "contractor@test.com"},
+    )
+
+    assert response.status_code == 200
+    assert "If an account exists" in response.json["message"]
+    assert len(outbox) == 1
+    assert "password reset token" in outbox[0][2]
+
+
+def test_forgot_password_does_not_reveal_unknown_email(client, outbox):
+    response = client.post(
+        "/api/auth/forgot-password",
+        json={"email": "unknown@test.com"},
+    )
+
+    assert response.status_code == 200
+    assert "If an account exists" in response.json["message"]
+    assert len(outbox) == 0
+
+
+def test_password_reset_changes_password_and_prevents_token_reuse(
+    client, login, outbox
+):
+    login("contractor")
+
+    client.post(
+        "/api/auth/forgot-password",
+        json={"email": "contractor@test.com"},
+    )
+
+    token = outbox[0][2].split(
+        "Your password reset token is:\n\n"
+    )[1].splitlines()[0]
+
+    response = client.post(
+        "/api/auth/reset-password",
+        json={"token": token, "password": "NewPassword123"},
+    )
+
+    assert response.status_code == 200
+    assert "successfully reset" in response.json["message"]
+
+    new_login = client.post(
+        "/api/auth/login",
+        json={
+            "email": "contractor@test.com",
+            "password": "NewPassword123",
+        },
+    )
+
+    assert new_login.status_code == 200
+
+    reused = client.post(
+        "/api/auth/reset-password",
+        json={"token": token, "password": "AnotherPassword123"},
+    )
+
+    assert reused.status_code == 400
+    assert "Invalid or expired" in reused.json["error"]
+
+
+def test_password_reset_rejects_invalid_token(client):
+    response = client.post(
+        "/api/auth/reset-password",
+        json={"token": "invalid-token", "password": "NewPassword123"},
+    )
+
+    assert response.status_code == 400
+    assert "Invalid or expired" in response.json["error"]
+
+
+def test_password_reset_rejects_short_password(client):
+    response = client.post(
+        "/api/auth/reset-password",
+        json={"token": "invalid-token", "password": "short"},
+    )
+
+    assert response.status_code == 400
+    assert "password" in response.json["details"]

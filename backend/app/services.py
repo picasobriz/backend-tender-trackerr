@@ -1,5 +1,7 @@
 """Outside-world helpers: verification tokens, Resend email, Cloudinary uploads, deadline reminders."""
 from datetime import timedelta
+import hashlib
+import hmac
 
 import cloudinary.uploader
 import resend
@@ -28,6 +30,33 @@ def read_token(token, max_age=86400):
         ).loads(token, salt="verify", max_age=max_age)
     except BadSignature:
         raise ApiError("Invalid or expired verification token", 400)
+
+def password_reset_fingerprint(user):
+    return hmac.new(
+        current_app.config["SECRET_KEY"].encode(),
+        user.password_hash.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def make_password_reset_token(user):
+    payload = {
+        "email": user.email,
+        "fingerprint": password_reset_fingerprint(user),
+    }
+
+    return URLSafeTimedSerializer(
+        current_app.config["SECRET_KEY"]
+    ).dumps(payload, salt="password-reset")
+
+
+def read_password_reset_token(token, max_age=1800):
+    try:
+        return URLSafeTimedSerializer(
+            current_app.config["SECRET_KEY"]
+        ).loads(token, salt="password-reset", max_age=max_age)
+    except BadSignature:
+        raise ApiError("Invalid or expired password reset token", 400)
 
 
 def send_email(to, subject, body):

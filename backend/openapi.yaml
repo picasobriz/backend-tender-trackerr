@@ -2,7 +2,29 @@
   securityDefinitions: {BearerAuth: {type: apiKey, name: Authorization, in: header, description: Bearer JWT token}}, paths: {/api/health: {get: {tags: [System], summary: Check API health, responses: {200: {
             description: API running}}}}, /api/auth/register: {post: {tags: [Authentication], summary: Register contractor or auditor, parameters: [{in: body, name: body, required: true, schema: {$ref: '#/definitions/Register'}}],
         responses: {201: {description: Registered}, 400: {description: Validation error}, 409: {description: Email already exists}}}}, /api/auth/verify: {post: {tags: [Authentication], summary: Verify account,
-        parameters: [{in: body, name: body, required: true, schema: {$ref: '#/definitions/Verify'}}], responses: {200: {description: Verified}, 404: {description: Account not found}}}}, /api/auth/login: {
+        parameters: [{in: body, name: body, required: true, schema: {$ref: '#/definitions/Verify'}}], responses: {200: {description: Verified}, 404: {description: Account not found}}}},
+    /api/auth/forgot-password: {
+      post: {
+        tags: [Authentication],
+        summary: Request password reset,
+        parameters: [{in: body, name: body, required: true, schema: {$ref: '#/definitions/ForgotPassword'}}],
+        responses: {
+          200: {description: Generic response whether account exists},
+          400: {description: Validation error}
+        }
+      }
+    },
+    /api/auth/reset-password: {
+      post: {
+        tags: [Authentication],
+        summary: Reset password using token,
+        parameters: [{in: body, name: body, required: true, schema: {$ref: '#/definitions/ResetPassword'}}],
+        responses: {
+          200: {description: Password successfully reset},
+          400: {description: Invalid, expired token or validation error}
+        }
+      }
+    }, /api/auth/login: {
       post: {tags: [Authentication], summary: Login and receive JWT, parameters: [{in: body, name: body, required: true, schema: {$ref: '#/definitions/Login'}}], responses: {200: {description: Login successful},
           401: {description: Invalid credentials}, 403: {description: Account not verified}}}}, /api/auth/me: {get: {tags: [Authentication], summary: Get current user, security: [{BearerAuth: []}], responses: {
           200: {description: User profile}, 401: {description: Unauthorized}}}}, /api/tenders: {get: {tags: [Tenders], summary: List tenders, security: [{BearerAuth: []}], parameters: [{name: status, in: query,
@@ -24,7 +46,21 @@
             required: true}, {name: kind, in: formData, type: string, required: true, enum: [logo, cover, bid]}], responses: {201: {description: Uploaded; returns URL}, 400: {description: Invalid upload}}}}},
   definitions: {Register: {type: object, required: [name, email, password], properties: {name: {type: string, maxLength: 100}, email: {type: string, format: email}, password: {type: string, minLength: 8,
           maxLength: 128}, role: {type: string, enum: [contractor, auditor], default: contractor}}}, Login: {type: object, required: [email, password], properties: {email: {type: string, format: email},
-        password: {type: string}}}, Verify: {type: object, required: [token], properties: {token: {type: string}}}, TenderInput: {type: object, required: [title, category, budget, description, deadline_date],
+        password: {type: string}}}, Verify: {type: object, required: [token], properties: {token: {type: string}}},
+    ForgotPassword: {
+      type: object,
+      required: [email],
+      properties: {email: {type: string, format: email}}
+    },
+    ResetPassword: {
+      type: object,
+      required: [token, password],
+      properties: {
+        token: {type: string, maxLength: 500},
+        password: {type: string, minLength: 8, maxLength: 128}
+      }
+    },
+    TenderInput: {type: object, required: [title, category, budget, description, deadline_date],
       properties: {title: {type: string, maxLength: 200}, category: {type: string, maxLength: 80}, budget: {type: number, minimum: 0}, description: {type: string, maxLength: 5000}, deadline_date: {type: string,
           format: date-time}, cover_image_url: {type: string}, status: {type: string, enum: [open, closed, awarded]}}}, TenderUpdate: {type: object, properties: {title: {type: string}, category: {type: string},
         budget: {type: number}, description: {type: string}, deadline_date: {type: string, format: date-time}, cover_image_url: {type: string}, status: {type: string, enum: [open, closed, awarded]}}}, BidInput: {

@@ -55,7 +55,24 @@ class LoginIn(In):
 
 class VerifyIn(In):
     token = text(500)
+class ForgotPasswordIn(In):
+    email = fields.Email(
+        required=True,
+        error_messages={**MSG, "invalid": "is not a valid email address"}
+    )
 
+
+class ResetPasswordIn(In):
+    token = text(500)
+    password = fields.String(
+        required=True,
+        error_messages=MSG,
+        validate=v.Length(
+            min=8,
+            max=128,
+            error="must be 8 to 128 characters"
+        )
+    )
 
 class TenderIn(In):
     title = text(200)
@@ -178,4 +195,5 @@ class BidOut(Schema):
             "document_url",
             "status",
             "submitted_at",
+
         )
