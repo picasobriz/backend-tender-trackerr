@@ -33,6 +33,7 @@ class Config:
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")  # set to your frontend URL in production
     RESEND_API_KEY = os.getenv("RESEND_API_KEY")
     MAIL_FROM = os.getenv("MAIL_FROM", "no-reply@tendertrack.com")
+    EMAIL_REDIRECT_TO = os.getenv("EMAIL_REDIRECT_TO")
     
     # Cloudinary Configuration
     CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")

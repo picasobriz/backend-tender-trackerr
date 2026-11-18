@@ -1,5 +1,5 @@
 import hmac
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import create_access_token
 
 from .. import services
@@ -28,7 +28,7 @@ def register():
     user.set_password(d["password"])
     db.session.add(user)
     db.session.commit()
-    services.send_email(user.email, "Verify your TenderTrack account", f"Your verification token:\n\n{services.make_token(user.email)}")
+    services.send_email(current_app.config.get("EMAIL_REDIRECT_TO") or user.email, "Verify your TenderTrack account", f"Account email: {user.email}\n\nYour verification token:\n\n{services.make_token(user.email)}")
     return jsonify(message="Registered. Check your email for the verification token."), 201
 
 
@@ -69,7 +69,7 @@ def forgot_password():
         token = services.make_password_reset_token(user)
 
         services.send_email(
-            user.email,
+            current_app.config.get("EMAIL_REDIRECT_TO") or user.email,
             "Reset your TenderTrack password",
             (
                 "We received a request to reset your TenderTrack password.\n\n"
