@@ -356,3 +356,74 @@ Auditors receive:
 Available endpoint:
 
 - `GET /api/dashboard`
+
+## Database Design
+
+TenderTrack uses SQLAlchemy models to represent its relational database structure.
+
+The main database tables are:
+
+### Users
+
+The `users` table stores information about registered users.
+
+Important fields:
+
+- `id` - Unique user identifier.
+- `name` - User's name.
+- `email` - Unique email address.
+- `password_hash` - Securely hashed password.
+- `role` - Admin, contractor or auditor.
+- `is_verified` - Indicates whether the account has been verified.
+- `company_logo_url` - Stores the company logo URL.
+- `created_at` - Account creation timestamp.
+
+Passwords are never stored as plain text. The application uses Werkzeug's password hashing functions to generate and verify password hashes.
+
+### Tenders
+
+The `tenders` table stores tender information created by administrators.
+
+Important fields:
+
+- `id` - Unique tender identifier.
+- `title` - Tender title.
+- `category` - Tender category.
+- `budget` - Available tender budget.
+- `description` - Tender description.
+- `deadline_date` - Tender closing date and time.
+- `status` - Open, closed or awarded.
+- `cover_image_url` - Optional tender cover image.
+- `created_by_id` - References the administrator who created the tender.
+- `created_at` - Tender creation timestamp.
+
+Each tender belongs to one user through `created_by_id`.
+
+A tender can also have multiple associated bids.
+
+### Bids
+
+The `bids` table stores contractor proposals submitted against tenders.
+
+Important fields:
+
+- `id` - Unique bid identifier.
+- `tender_id` - References the tender being bid on.
+- `bidder_id` -References the contractor submitting the bid.
+- `proposed_amount` - Amount proposed by the contractor.
+- `proposal_text` - Description of the contractor's proposal.
+- `document_url` - Optional supporting document URL.
+- `status` - Pending, accepted or rejected.
+- `submitted_at` - Bid submission timestamp.
+
+A unique database constraint on `tender_id` and `bidder_id` prevents the same contractor from submitting more than one bid for a particular tender.
+
+### Database Relationships
+
+- One user can create multiple tenders.
+- One tender belongs to the administrator who created it.
+- One tender can receive multiple bids.
+- One contractor can submit multiple bids across different tenders.
+- Each bid belongs to one contractor and one tender.
+- Deleting a tender also
+
