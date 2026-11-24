@@ -114,3 +114,50 @@ backend-tender-trackerr/
     |-- seed.py
     `-- test_schemas.py
 ```
+
+### Main Application Files
+
+- `run.py`
+  - Entry point used to start the Flask application.
+  - Imports `create_app()` and creates the Flask application instance.
+  - Gunicorn uses the application instance named `app` when starting the deployed service.
+
+- `app/__init__.py`
+  - Contains the application factory called `create_app()`.
+  - Creates and configures the Flask application.
+  - Initializes the database, JWT manager, migrations and CORS.
+  - Configures Cloudinary and Swagger.
+  - Registers all five Blueprints.
+  - Defines centralized error handlers.
+  - Creates database tables when the application starts.
+
+- `config.py`
+  - Loads environment variables.
+  - Configures application security keys.
+  - Configures the database connection.
+  - Sets JWT expiration.
+  - Configures email and Cloudinary settings.
+  - Provides a separate configuration for testing.
+
+- `extensions.py`
+  - Creates reusable Flask extensions.
+  - Defines the SQLAlchemy database instance and JWT manager.
+
+- `models.py`
+  - Defines the database tables and their relationships.
+  - Contains the User, Tender and Bid models.
+  - Provides password hashing and password verification methods.
+
+- `schemas.py`
+  - Validates incoming data before it reaches the database.
+  - Checks required fields, data types, string lengths, dates, amounts and allowed values.
+  - Controls the structure of API responses.
+  - Prevents sensitive information such as password hashes from appearing in normal user responses.
+
+- `utils.py`
+  - Contains reusable application functions.
+  - Handles request validation, record retrieval, pagination, API errors and role-based authorization.
+
+- `services.py`
+  - Contains operations that interact with external services.
+  - Handles email verification tokens, password reset tokens, Resend email delivery, Cloudinary uploads and tender deadline reminders.
