@@ -61,3 +61,56 @@ The project uses the following technologies:
 - **Cloudinary**: Stores uploaded images and documents.
 - **Gunicorn**: Runs the Flask application in the production environment.
 - **Pytest**: Used to test the backend functionality.
+
+## Project Structure
+
+The repository separates the backend application from the repository's root configuration files.
+
+```text
+backend-tender-trackerr/
+|
+|-- .env.example
+|-- .gitignore
+|-- Pipfile
+|-- Pipfile.lock
+|-- README.md
+|
+`-- backend/
+    |
+    |-- app/
+    |   |-- __init__.py
+    |   |-- config.py
+    |   |-- extensions.py
+    |   |-- models.py
+    |   |-- schemas.py
+    |   |-- services.py
+    |   |-- utils.py
+    |   |
+    |   `-- routes/
+    |       |-- __init__.py
+    |       |-- auth.py
+    |       |-- bids.py
+    |       |-- dashboard.py
+    |       |-- tenders.py
+    |       `-- uploads.py
+    |
+    |-- tests/
+    |   |-- conftest.py
+    |   |-- test_app.py
+    |   |-- test_auth.py
+    |   |-- test_bids.py
+    |   |-- test_dashboard.py
+    |   |-- test_services.py
+    |   |-- test_tenders.py
+    |   |-- test_uploads.py
+    |   `-- test_utils.py
+    |
+    |-- .env.example
+    |-- db_diagram.png
+    |-- openapi.yaml
+    |-- pytest.ini
+    |-- requirements.txt
+    |-- run.py
+    |-- seed.py
+    `-- test_schemas.py
+```
