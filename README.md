@@ -11,3 +11,30 @@ The backend handles the application's main business operations, authentication, 
 *GitHub Repository:* https://github.com/picasobriz/backend-tender-trackerr
 
 ---
+
+## Project Overview
+
+TenderTrack is designed around three main user roles:
+
+- **Admin**
+  - Creates and publishes tenders.
+  - Views and manages tenders they have created.
+  - Receives bids submitted by contractors.
+  - Reviews submitted bids.
+  - Accepts or rejects contractor proposals.
+  - Views dashboard statistics relating to their tenders.
+
+- **Contractor**
+  - Creates an account and verifies their email.
+  - Logs into the system.
+  - Views available tenders.
+  - Submits proposals for open tenders.
+  - Uploads supporting bid documents.
+  - Tracks submitted bids and their statuses.
+  - Views upcoming tender deadlines on their dashboard.
+
+- **Auditor**
+  - Logs into the system.
+  - Views awarded tenders.
+  - Accesses information about awarded projects.
+  - Views statistics relating to awarded tenders and their values.
