@@ -425,5 +425,5 @@ A unique database constraint on `tender_id` and `bidder_id` prevents the same co
 - One tender can receive multiple bids.
 - One contractor can submit multiple bids across different tenders.
 - Each bid belongs to one contractor and one tender.
-- Deleting a tender also
+- Deleting a tender also deletes the bids
 
